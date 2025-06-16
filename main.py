@@ -26,6 +26,21 @@ def main():
     
     if verbose:
         print(f"User Prompt: {user_prompt}\n")
+    iters = 0
+    while True:
+        iters += 1
+        if iters > 20:
+            print(f"Maximum iterations (20) reached.")
+            sys.exit(1)
+
+        try:
+            final_response = generate_content(client, messages, verbose)
+            if final_response:
+                print("Final response:")
+                print(final_response)
+                break
+        except Exception as e:
+            print(f"Error in generate_content: {e}")
 
     generate_content(client, messages, verbose)
 
@@ -44,6 +59,11 @@ def generate_content(client, messages, verbose):
         print("Prompt tokens:", response.usage_metadata.prompt_token_count)
         print("Response tokens:", response.usage_metadata.candidates_token_count)
 
+    if response.candidates:
+        for candidate in response.candidates:
+            function_call_content = candidate.content
+            messages.append(function_call_content)
+
 
     if not response.function_calls:
         return response.text
@@ -61,6 +81,7 @@ def generate_content(client, messages, verbose):
 
     if not function_responses:
         raise Exception("no function responses generated")
+    messages.append(types.Content(role="tool", parts=function_responses))
     
 
 
